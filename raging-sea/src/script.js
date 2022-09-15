@@ -11,6 +11,10 @@ import waterFragmentShader from './shaders/water/fragment.glsl';
  */
 // Debug
 const gui = new dat.GUI({ width: 340 });
+const debugParameters = {
+    depthColor: '#186691',
+    surfaceColor: '#9bd8ff'
+};
 
 // Canvas
 const canvas = document.querySelector('canvas.webgl');
@@ -27,7 +31,17 @@ const waterGeometry = new THREE.PlaneGeometry(2, 2, 128, 128);
 // Material
 const waterMaterial = new THREE.ShaderMaterial({
     vertexShader: waterVertexShader,
-    fragmentShader: waterFragmentShader
+    fragmentShader: waterFragmentShader,
+    uniforms: {
+        uniformWavesElevation: { value: 0.2 },
+        uniformWavesFrequency: { value: new THREE.Vector2(4, 1.5) },
+        uniformTime: { value: 0},
+        uniformWavesSpeed: { value: 0.75 },
+        uniformDepthColor: { value: new THREE.Color(debugParameters.depthColor) },
+        uniformSurfaceColor: { value: new THREE.Color(debugParameters.surfaceColor) },
+        uniformColorOffset: { value: 0.08 },
+        uniformColorMultiplier: { value: 5 }
+    }
 });
 
 // Mesh
@@ -91,6 +105,9 @@ const tick = () =>
     // Update controls
     controls.update();
 
+    // Update objects
+    waterMaterial.uniforms.uniformTime.value = elapsedTime;
+
     // Render
     renderer.render(scene, camera);
 
@@ -102,5 +119,19 @@ const tick = () =>
  * DEBUG PANEL CONFIGURATION
  */
 gui.add(waterMaterial, 'wireframe');
+gui.add(waterMaterial.uniforms.uniformWavesElevation, 'value').name('Elevation').min(0).max(1).step(0.001);
+gui.add(waterMaterial.uniforms.uniformWavesFrequency.value, 'x').name('Frequency x-axis').min(0).max(10).step(0.001);
+gui.add(waterMaterial.uniforms.uniformWavesFrequency.value, 'y').name('Frequency z-axis').min(0).max(10).step(0.001);
+gui.add(waterMaterial.uniforms.uniformWavesSpeed, 'value').name('Waves speed').min(0).max(5).step(0.001);
+
+gui.addColor(debugParameters, 'depthColor').
+    name('Depth color')
+    .onChange(() => { waterMaterial.uniforms.uniformDepthColor.value.set(debugParameters.depthColor) });
+gui.addColor(debugParameters, 'surfaceColor')
+    .name('Surface color')
+    .onChange(() => { waterMaterial.uniforms.uniformSurfaceColor.value.set(debugParameters.surfaceColor) });
+
+gui.add(waterMaterial.uniforms.uniformColorOffset, 'value').name('Color offset').min(0).max(1).step(0.001);
+gui.add(waterMaterial.uniforms.uniformColorMultiplier, 'value').name('Color multiplier').min(0).max(10).step(0.001);
 
 tick();

@@ -1,207 +1,215 @@
 import './style.css'
-import * as THREE from 'three'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import * as dat from 'lil-gui'
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 
-/**
- * Loaders
- */
-const gltfLoader = new GLTFLoader()
-const textureLoader = new THREE.TextureLoader()
-const cubeTextureLoader = new THREE.CubeTextureLoader()
+import Experience from './Experience/Experience'
 
-/**
- * Base
- */
-// Debug
-const gui = new dat.GUI()
-const debugObject = {}
+const allowGlobalAccess = true;
+const canvas = document.querySelector('canvas.webgl');
 
-// Canvas
-const canvas = document.querySelector('canvas.webgl')
+const experience = new Experience(allowGlobalAccess, canvas);
 
-// Scene
-const scene = new THREE.Scene()
+// import * as THREE from 'three'
+// import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+// import * as dat from 'lil-gui'
+// import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 
-/**
- * Update all materials
- */
-const updateAllMaterials = () =>
-{
-    scene.traverse((child) =>
-    {
-        if(child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial)
-        {
-            // child.material.envMap = environmentMap
-            child.material.envMapIntensity = debugObject.envMapIntensity
-            child.material.needsUpdate = true
-            child.castShadow = true
-            child.receiveShadow = true
-        }
-    })
-}
+// /**
+//  * Loaders
+//  */
+// const gltfLoader = new GLTFLoader()
+// const textureLoader = new THREE.TextureLoader()
+// const cubeTextureLoader = new THREE.CubeTextureLoader()
 
-/**
- * Environment map
- */
-const environmentMap = cubeTextureLoader.load([
-    '/textures/environmentMap/px.jpg',
-    '/textures/environmentMap/nx.jpg',
-    '/textures/environmentMap/py.jpg',
-    '/textures/environmentMap/ny.jpg',
-    '/textures/environmentMap/pz.jpg',
-    '/textures/environmentMap/nz.jpg'
-])
+// /**
+//  * Base
+//  */
+// // Debug
+// const gui = new dat.GUI()
+// const debugObject = {}
 
-environmentMap.encoding = THREE.sRGBEncoding
+// // Canvas
+// const canvas = document.querySelector('canvas.webgl')
 
-// scene.background = environmentMap
-scene.environment = environmentMap
+// // Scene
+// const scene = new THREE.Scene()
 
-debugObject.envMapIntensity = 0.4
-gui.add(debugObject, 'envMapIntensity').min(0).max(4).step(0.001).onChange(updateAllMaterials)
+// /**
+//  * Update all materials
+//  */
+// const updateAllMaterials = () =>
+// {
+//     scene.traverse((child) =>
+//     {
+//         if(child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial)
+//         {
+//             // child.material.envMap = environmentMap
+//             child.material.envMapIntensity = debugObject.envMapIntensity
+//             child.material.needsUpdate = true
+//             child.castShadow = true
+//             child.receiveShadow = true
+//         }
+//     })
+// }
 
-/**
- * Models
- */
-let foxMixer = null
+// /**
+//  * Environment map
+//  */
+// const environmentMap = cubeTextureLoader.load([
+//     '/textures/environmentMap/px.jpg',
+//     '/textures/environmentMap/nx.jpg',
+//     '/textures/environmentMap/py.jpg',
+//     '/textures/environmentMap/ny.jpg',
+//     '/textures/environmentMap/pz.jpg',
+//     '/textures/environmentMap/nz.jpg'
+// ])
 
-gltfLoader.load(
-    '/models/Fox/glTF/Fox.gltf',
-    (gltf) =>
-    {
-        // Model
-        gltf.scene.scale.set(0.02, 0.02, 0.02)
-        scene.add(gltf.scene)
+// environmentMap.encoding = THREE.sRGBEncoding
 
-        // Animation
-        foxMixer = new THREE.AnimationMixer(gltf.scene)
-        const foxAction = foxMixer.clipAction(gltf.animations[0])
-        foxAction.play()
+// // scene.background = environmentMap
+// scene.environment = environmentMap
 
-        // Update materials
-        updateAllMaterials()
-    }
-)
+// debugObject.envMapIntensity = 0.4
+// gui.add(debugObject, 'envMapIntensity').min(0).max(4).step(0.001).onChange(updateAllMaterials)
 
-/**
- * Floor
- */
-const floorColorTexture = textureLoader.load('textures/dirt/color.jpg')
-floorColorTexture.encoding = THREE.sRGBEncoding
-floorColorTexture.repeat.set(1.5, 1.5)
-floorColorTexture.wrapS = THREE.RepeatWrapping
-floorColorTexture.wrapT = THREE.RepeatWrapping
+// /**
+//  * Models
+//  */
+// let foxMixer = null
 
-const floorNormalTexture = textureLoader.load('textures/dirt/normal.jpg')
-floorNormalTexture.repeat.set(1.5, 1.5)
-floorNormalTexture.wrapS = THREE.RepeatWrapping
-floorNormalTexture.wrapT = THREE.RepeatWrapping
+// gltfLoader.load(
+//     '/models/Fox/glTF/Fox.gltf',
+//     (gltf) =>
+//     {
+//         // Model
+//         gltf.scene.scale.set(0.02, 0.02, 0.02)
+//         scene.add(gltf.scene)
 
-const floorGeometry = new THREE.CircleGeometry(5, 64)
-const floorMaterial = new THREE.MeshStandardMaterial({
-    map: floorColorTexture,
-    normalMap: floorNormalTexture
-})
-const floor = new THREE.Mesh(floorGeometry, floorMaterial)
-floor.rotation.x = - Math.PI * 0.5
-scene.add(floor)
+//         // Animation
+//         foxMixer = new THREE.AnimationMixer(gltf.scene)
+//         const foxAction = foxMixer.clipAction(gltf.animations[0])
+//         foxAction.play()
 
-/**
- * Lights
- */
-const directionalLight = new THREE.DirectionalLight('#ffffff', 4)
-directionalLight.castShadow = true
-directionalLight.shadow.camera.far = 15
-directionalLight.shadow.mapSize.set(1024, 1024)
-directionalLight.shadow.normalBias = 0.05
-directionalLight.position.set(3.5, 2, - 1.25)
-scene.add(directionalLight)
+//         // Update materials
+//         updateAllMaterials()
+//     }
+// )
 
-gui.add(directionalLight, 'intensity').min(0).max(10).step(0.001).name('lightIntensity')
-gui.add(directionalLight.position, 'x').min(- 5).max(5).step(0.001).name('lightX')
-gui.add(directionalLight.position, 'y').min(- 5).max(5).step(0.001).name('lightY')
-gui.add(directionalLight.position, 'z').min(- 5).max(5).step(0.001).name('lightZ')
+// /**
+//  * Floor
+//  */
+// const floorColorTexture = textureLoader.load('textures/dirt/color.jpg')
+// floorColorTexture.encoding = THREE.sRGBEncoding
+// floorColorTexture.repeat.set(1.5, 1.5)
+// floorColorTexture.wrapS = THREE.RepeatWrapping
+// floorColorTexture.wrapT = THREE.RepeatWrapping
 
-/**
- * Sizes
- */
-const sizes = {
-    width: window.innerWidth,
-    height: window.innerHeight
-}
+// const floorNormalTexture = textureLoader.load('textures/dirt/normal.jpg')
+// floorNormalTexture.repeat.set(1.5, 1.5)
+// floorNormalTexture.wrapS = THREE.RepeatWrapping
+// floorNormalTexture.wrapT = THREE.RepeatWrapping
 
-window.addEventListener('resize', () =>
-{
-    // Update sizes
-    sizes.width = window.innerWidth
-    sizes.height = window.innerHeight
+// const floorGeometry = new THREE.CircleGeometry(5, 64)
+// const floorMaterial = new THREE.MeshStandardMaterial({
+//     map: floorColorTexture,
+//     normalMap: floorNormalTexture
+// })
+// const floor = new THREE.Mesh(floorGeometry, floorMaterial)
+// floor.rotation.x = - Math.PI * 0.5
+// scene.add(floor)
 
-    // Update camera
-    camera.aspect = sizes.width / sizes.height
-    camera.updateProjectionMatrix()
+// /**
+//  * Lights
+//  */
+// const directionalLight = new THREE.DirectionalLight('#ffffff', 4)
+// directionalLight.castShadow = true
+// directionalLight.shadow.camera.far = 15
+// directionalLight.shadow.mapSize.set(1024, 1024)
+// directionalLight.shadow.normalBias = 0.05
+// directionalLight.position.set(3.5, 2, - 1.25)
+// scene.add(directionalLight)
 
-    // Update renderer
-    renderer.setSize(sizes.width, sizes.height)
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-})
+// gui.add(directionalLight, 'intensity').min(0).max(10).step(0.001).name('lightIntensity')
+// gui.add(directionalLight.position, 'x').min(- 5).max(5).step(0.001).name('lightX')
+// gui.add(directionalLight.position, 'y').min(- 5).max(5).step(0.001).name('lightY')
+// gui.add(directionalLight.position, 'z').min(- 5).max(5).step(0.001).name('lightZ')
 
-/**
- * Camera
- */
-// Base camera
-const camera = new THREE.PerspectiveCamera(35, sizes.width / sizes.height, 0.1, 100)
-camera.position.set(6, 4, 8)
-scene.add(camera)
+// /**
+//  * Sizes
+//  */
+// const sizes = {
+//     width: window.innerWidth,
+//     height: window.innerHeight
+// }
 
-// Controls
-const controls = new OrbitControls(camera, canvas)
-controls.enableDamping = true
+// window.addEventListener('resize', () =>
+// {
+//     // Update sizes
+//     sizes.width = window.innerWidth
+//     sizes.height = window.innerHeight
 
-/**
- * Renderer
- */
-const renderer = new THREE.WebGLRenderer({
-    canvas: canvas,
-    antialias: true
-})
-renderer.physicallyCorrectLights = true
-renderer.outputEncoding = THREE.sRGBEncoding
-renderer.toneMapping = THREE.CineonToneMapping
-renderer.toneMappingExposure = 1.75
-renderer.shadowMap.enabled = true
-renderer.shadowMap.type = THREE.PCFSoftShadowMap
-renderer.setClearColor('#211d20')
-renderer.setSize(sizes.width, sizes.height)
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+//     // Update camera
+//     camera.aspect = sizes.width / sizes.height
+//     camera.updateProjectionMatrix()
 
-/**
- * Animate
- */
-const clock = new THREE.Clock()
-let previousTime = 0
+//     // Update renderer
+//     renderer.setSize(sizes.width, sizes.height)
+//     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+// })
 
-const tick = () =>
-{
-    const elapsedTime = clock.getElapsedTime()
-    const deltaTime = elapsedTime - previousTime
-    previousTime = elapsedTime
+// /**
+//  * Camera
+//  */
+// // Base camera
+// const camera = new THREE.PerspectiveCamera(35, sizes.width / sizes.height, 0.1, 100)
+// camera.position.set(6, 4, 8)
+// scene.add(camera)
 
-    // Update controls
-    controls.update()
+// // Controls
+// const controls = new OrbitControls(camera, canvas)
+// controls.enableDamping = true
 
-    // Fox animation
-    if(foxMixer)
-    {
-        foxMixer.update(deltaTime)
-    }
+// /**
+//  * Renderer
+//  */
+// const renderer = new THREE.WebGLRenderer({
+//     canvas: canvas,
+//     antialias: true
+// })
+// renderer.physicallyCorrectLights = true
+// renderer.outputEncoding = THREE.sRGBEncoding
+// renderer.toneMapping = THREE.CineonToneMapping
+// renderer.toneMappingExposure = 1.75
+// renderer.shadowMap.enabled = true
+// renderer.shadowMap.type = THREE.PCFSoftShadowMap
+// renderer.setClearColor('#211d20')
+// renderer.setSize(sizes.width, sizes.height)
+// renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 
-    // Render
-    renderer.render(scene, camera)
+// /**
+//  * Animate
+//  */
+// const clock = new THREE.Clock()
+// let previousTime = 0
 
-    // Call tick again on the next frame
-    window.requestAnimationFrame(tick)
-}
+// const tick = () =>
+// {
+//     const elapsedTime = clock.getElapsedTime()
+//     const deltaTime = elapsedTime - previousTime
+//     previousTime = elapsedTime
 
-tick()
+//     // Update controls
+//     controls.update()
+
+//     // Fox animation
+//     if(foxMixer)
+//     {
+//         foxMixer.update(deltaTime)
+//     }
+
+//     // Render
+//     renderer.render(scene, camera)
+
+//     // Call tick again on the next frame
+//     window.requestAnimationFrame(tick)
+// }
+
+// tick()

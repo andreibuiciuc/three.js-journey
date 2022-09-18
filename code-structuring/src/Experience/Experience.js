@@ -5,11 +5,19 @@ import Time from "./Utils/Time";
 
 import Camera from './Camera';
 
+let experienceInstance = null;
+
 /**
  * Experience class
  */
 export default class Experience {
     constructor(allowGlobalAccess = false, canvas) {
+        // Singleton
+        if (experienceInstance) {
+            return experienceInstance;
+        }
+        experienceInstance = this;
+
         // Global access
         if (allowGlobalAccess) {
             window.experience = this;
@@ -22,7 +30,7 @@ export default class Experience {
 
         // three 
         this.scene = new THREE.Scene();
-        this.camera = new THREE.Camera();
+        this.camera = new Camera();
 
         // Event listeners
         this.sizes.on('resize', () => {
@@ -35,10 +43,10 @@ export default class Experience {
     }
 
     resize() {
-
+        this.camera.resize();
     }
     
     update() {
-
+        this.camera.update();
     }
 }

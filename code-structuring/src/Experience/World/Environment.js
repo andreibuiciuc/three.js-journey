@@ -6,11 +6,12 @@ export default class Environment {
         this.experience = new Experience();
         this.scene = this.experience.scene;
         this.resources = this.experience.resources;
-        this.environmentMap = {};
+        this.debug = this.experience.debug;
 
         // Setup
         this.setSunlight();
         this.setEnvironmentMap();
+        this.setDebug();
     }
 
     setSunlight() {
@@ -24,6 +25,7 @@ export default class Environment {
     }
 
     setEnvironmentMap() {
+        this.environmentMap = {};
         this.environmentMap.intensity = 0.3;
         this.environmentMap.texture = this.resources.items.environmentMapTexture;
         this.environmentMap.texture.encoding = THREE.sRGBEncoding;
@@ -37,6 +39,37 @@ export default class Environment {
                     child.material.needsUpdate = true;
                 }
             })
+        }
+        this.environmentMap.updateMaterials();
+    }
+
+    setDebug() {
+        if (this.debug.isActive) {
+            this.debugEnvironmentFolder = this.debug.gui.addFolder('Environment');
+
+            this.debugEnvironmentFolder
+                .add(this.sunlight, 'intensity')
+                .min(0).max(4).step(0.001)
+                .name('light intensity')
+                .onChange(this.environmentMap.updateMaterial);
+                
+            this.debugEnvironmentFolder
+                .add(this.sunlight.position, 'x')
+                .min(-5).max(5).step(0.001)
+                .name('light x position')
+                .onChange(this.environmentMap.updateMaterial);
+
+            this.debugEnvironmentFolder
+                .add(this.sunlight.position, 'y')
+                .min(-5).max(5).step(0.001)
+                .name('light y position')
+                .onChange(this.environmentMap.updateMaterial);
+                
+            this.debugEnvironmentFolder
+                .add(this.sunlight.position, 'z')
+                .min(-5).max(5).step(0.001)
+                .name('light z position')
+                .onChange(this.environmentMap.updateMaterial);
         }
     }
 }

@@ -6,6 +6,9 @@ import Time from "./Utils/Time";
 import Camera from './Camera';
 import Renderer from './Renderer';
 import World from './World/World';
+import Resources from './Utils/Resources';
+
+import sources from './sources.js';
 
 let experienceInstance = null;
 
@@ -29,6 +32,7 @@ export default class Experience {
         this.canvas = canvas;
         this.sizes = new Sizes();
         this.time = new Time();
+        this.resources = new Resources(sources);
 
         // three 
         this.scene = new THREE.Scene();

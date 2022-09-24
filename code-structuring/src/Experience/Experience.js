@@ -9,6 +9,7 @@ import World from './World/World';
 import Resources from './Utils/Resources';
 
 import sources from './sources.js';
+import Debug from './Utils/Debug';
 
 let experienceInstance = null;
 
@@ -30,6 +31,7 @@ export default class Experience {
         
         // Setup
         this.canvas = canvas;
+        this.debug = new Debug();
         this.sizes = new Sizes();
         this.time = new Time();
         this.resources = new Resources(sources);

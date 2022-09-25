@@ -63,6 +63,32 @@ const material = new THREE.MeshStandardMaterial( {
     normalMap: normalTexture
 })
 
+// Hooks
+// Rotation is only on the z and the x
+material.onBeforeCompile = (shader) => {
+    shader.vertexShader = shader.vertexShader.replace(
+        '#include <common>',
+        `
+            #include <common>
+
+            mat2 get2DRotationMatrix(float _angle) {
+                return mat2(cos(_angle), -sin(_angle), sin(_angle), cos(_angle));
+            }
+        `
+    );
+
+    shader.vertexShader = shader.vertexShader.replace(
+        '#include <begin_vertex>', 
+        `
+            #include <begin_vertex>
+
+            float angle = position.y * 0.9;
+            mat2 rotationMatrix = get2DRotationMatrix(angle);
+            transformed.xz = rotationMatrix * transformed.xz;
+        `
+        );
+}
+
 // Models
 gltfLoader.load(
     '/models/LeePerrySmith/LeePerrySmith.glb',

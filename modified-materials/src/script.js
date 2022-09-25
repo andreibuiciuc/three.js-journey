@@ -9,6 +9,10 @@ import * as dat from 'lil-gui'
 
 // Debug
 const gui = new dat.GUI()
+const debugParameters = {
+    rotationSpeed: 0.4,
+    rotationFunction: 0
+};
 
 // Canvas
 const canvas = document.querySelector('canvas.webgl')
@@ -63,37 +67,127 @@ const material = new THREE.MeshStandardMaterial( {
     normalMap: normalTexture
 })
 
+const customDepthMaterial = new THREE.MeshDepthMaterial({
+    depthPacking: THREE.RGBADepthPacking
+})
+
 const customUniforms = {
-    uTime: { value: 0}
+    uTime: { value: 0},
+    uSpeed: { value: debugParameters.rotationSpeed },
+    uAnimationFunction: { value: debugParameters.rotationFunction }
 };
 
 // Hooks
 // Rotation is only on the z and the x
 material.onBeforeCompile = (shader) => {
     shader.uniforms.uTime = customUniforms.uTime;
-
+    shader.uniforms.uSpeed = customUniforms.uSpeed;
+    shader.uniforms.uAnimationFunction = customUniforms.uAnimationFunction;
     shader.vertexShader = shader.vertexShader.replace(
         '#include <common>',
         `
             #include <common>
             uniform float uTime;
+            uniform float uSpeed;
+            uniform float uAnimationFunction;
 
             mat2 get2DRotationMatrix(float _angle) {
                 return mat2(cos(_angle), -sin(_angle), sin(_angle), cos(_angle));
             }
+
+            float simpleRotationAnimation() {
+                return (position.y + uTime) * uSpeed;
+            }
+
+            float simpleSinusRotationAnimation() {
+                return sin(simpleRotationAnimation() / uSpeed) * uSpeed;
+            }
+
+            float getRotationAngle() {
+                switch (int(uAnimationFunction)) {
+                    case 0:
+                        return simpleRotationAnimation();
+                        break;
+                    case 1:
+                        return simpleSinusRotationAnimation();
+                        break;
+                    default:
+                        return simpleRotationAnimation();
+                        break;
+                }
+            }
         `
     );
+    shader.vertexShader = shader.vertexShader.replace(
+        '#include <beginnormal_vertex>',
+        `
+            #include <beginnormal_vertex>
 
+            float angle = getRotationAngle();
+            mat2 rotationMatrix = get2DRotationMatrix(angle);
+
+            objectNormal.xz = rotationMatrix * objectNormal.xz;
+        `
+    );
     shader.vertexShader = shader.vertexShader.replace(
         '#include <begin_vertex>', 
         `
             #include <begin_vertex>
 
-            float angle = (position.y + uTime) * 0.9;
+            transformed.xz = rotationMatrix * transformed.xz;
+        `
+    );
+}
+
+customDepthMaterial.onBeforeCompile = (shader) => {
+    shader.uniforms.uTime = customUniforms.uTime;
+    shader.uniforms.uSpeed = customUniforms.uSpeed;
+    shader.uniforms.uAnimationFunction = customUniforms.uAnimationFunction;
+    shader.vertexShader = shader.vertexShader.replace(
+        '#include <common>',
+        `
+            #include <common>
+            uniform float uTime;
+            uniform float uSpeed;
+            uniform float uAnimationFunction;
+
+            mat2 get2DRotationMatrix(float _angle) {
+                return mat2(cos(_angle), -sin(_angle), sin(_angle), cos(_angle));
+            }
+
+            float simpleRotationAnimation() {
+                return (position.y + uTime) * uSpeed;
+            }
+
+            float simpleSinusRotationAnimation() {
+                return sin(simpleRotationAnimation() / uSpeed) * uSpeed;
+            }
+
+            float getRotationAngle() {
+                switch (int(uAnimationFunction)) {
+                    case 0:
+                        return simpleRotationAnimation();
+                        break;
+                    case 1:
+                        return simpleSinusRotationAnimation();
+                        break;
+                    default:
+                        return simpleRotationAnimation();
+                        break;
+                }
+            }
+        `
+    );
+    shader.vertexShader = shader.vertexShader.replace(
+        '#include <begin_vertex>', 
+        `
+            #include <begin_vertex>
+
+            float angle = getRotationAngle();
             mat2 rotationMatrix = get2DRotationMatrix(angle);
             transformed.xz = rotationMatrix * transformed.xz;
         `
-        );
+    );
 }
 
 // Models
@@ -105,6 +199,7 @@ gltfLoader.load(
         const mesh = gltf.scene.children[0]
         mesh.rotation.y = Math.PI * 0.5
         mesh.material = material
+        mesh.customDepthMaterial = customDepthMaterial
         scene.add(mesh)
 
         // Update materials
@@ -177,6 +272,8 @@ const tick = () =>
 
     // Update uniforms
     customUniforms.uTime.value = elapsedTime;
+    customUniforms.uSpeed.value = debugParameters.rotationSpeed;
+    customUniforms.uAnimationFunction.value = debugParameters.rotationFunction;
 
     // Render
     renderer.render(scene, camera);
@@ -185,4 +282,10 @@ const tick = () =>
     window.requestAnimationFrame(tick);
 }
 
+function setDebugPanel() {
+    gui.add(debugParameters, 'rotationSpeed').min(0).max(1).step(0.001);
+    gui.add(debugParameters, 'rotationFunction').min(0).max(2).step(1);
+}
+
+setDebugPanel();
 tick()

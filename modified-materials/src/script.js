@@ -63,13 +63,20 @@ const material = new THREE.MeshStandardMaterial( {
     normalMap: normalTexture
 })
 
+const customUniforms = {
+    uTime: { value: 0}
+};
+
 // Hooks
 // Rotation is only on the z and the x
 material.onBeforeCompile = (shader) => {
+    shader.uniforms.uTime = customUniforms.uTime;
+
     shader.vertexShader = shader.vertexShader.replace(
         '#include <common>',
         `
             #include <common>
+            uniform float uTime;
 
             mat2 get2DRotationMatrix(float _angle) {
                 return mat2(cos(_angle), -sin(_angle), sin(_angle), cos(_angle));
@@ -82,7 +89,7 @@ material.onBeforeCompile = (shader) => {
         `
             #include <begin_vertex>
 
-            float angle = position.y * 0.9;
+            float angle = (position.y + uTime) * 0.9;
             mat2 rotationMatrix = get2DRotationMatrix(angle);
             transformed.xz = rotationMatrix * transformed.xz;
         `
@@ -163,16 +170,19 @@ const clock = new THREE.Clock()
 
 const tick = () =>
 {
-    const elapsedTime = clock.getElapsedTime()
+    const elapsedTime = clock.getElapsedTime();
 
     // Update controls
-    controls.update()
+    controls.update();
+
+    // Update uniforms
+    customUniforms.uTime.value = elapsedTime;
 
     // Render
-    renderer.render(scene, camera)
+    renderer.render(scene, camera);
 
     // Call tick again on the next frame
-    window.requestAnimationFrame(tick)
+    window.requestAnimationFrame(tick);
 }
 
 tick()
